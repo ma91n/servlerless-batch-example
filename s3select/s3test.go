@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	if err := do(); err != nil {
+	if err := ExecuteQuery(); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -65,6 +65,7 @@ func ExecuteQuery() error {
 				fmt.Printf("%+v\n", resp)
 			}
 		}
+
 	}
 
 	if err := resp.EventStream.Err(); err != nil {

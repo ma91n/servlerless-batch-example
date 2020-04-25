@@ -1,4 +1,4 @@
-module github.com/laqiiz/serverless-batch-example/test
+module github.com/laqiiz/serverless-batch-example/s3select
 
 go 1.14
 
