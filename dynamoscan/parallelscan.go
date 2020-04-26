@@ -1,4 +1,4 @@
-package unlink
+package main
 
 import (
 	"context"
@@ -16,7 +16,11 @@ var db = dynamodb.New(session.Must(session.NewSession(aws.NewConfig().WithRegion
 
 type Resp struct {
 	StartKey map[string]*dynamodb.AttributeValue
-	Payload  []Ncu
+	Payload  []Scan
+}
+
+type Scan struct {
+	// Scan documentのフィールド
 }
 
 type Report struct {
@@ -26,12 +30,7 @@ type Report struct {
 func main() {
 	ctx := context.Background()
 	parallel := 4
-	if err := Do(ctx, parallel); err != nil {
-		log.Fatal(err)
-	}
-}
 
-func Do(ctx context.Context, parallel int) error {
 	reports := make([]*Report, 0, parallel)
 	m := sync.Mutex{}
 
@@ -39,7 +38,7 @@ func Do(ctx context.Context, parallel int) error {
 	for i := 0; i < parallel; i++ {
 		i := i
 		eg.Go(func() error {
-			err := ScanAndLogic(ctx, int64(parallel), int64(i))
+			err := ScanWithLogic(ctx, int64(parallel), int64(i))
 			if err != nil {
 				return err
 			}
@@ -53,17 +52,16 @@ func Do(ctx context.Context, parallel int) error {
 	}
 
 	if err := eg.Wait(); err != nil {
-		return fmt.Errorf("checkUnreach failed: %w", err)
+		log.Fatal(err)
 	}
 
 	fmt.Printf("reporte: %+v", reports)
-	return nil
 }
 
-func ScanAndLogic(ctx context.Context, total, seg int64) error {
+func ScanWithLogic(ctx context.Context, total, seg int64) error {
 	var startKey map[string]*dynamodb.AttributeValue // 初回はnilでOK
 	for {
-		resp, startKey, err := ScanSegment(ctx, total, seg, startKey)
+		resp, sk, err := ScanSegment(ctx, total, seg, startKey)
 		if err != nil {
 			return fmt.Errorf("ScanSegment: %w", err)
 		}
@@ -71,6 +69,7 @@ func ScanAndLogic(ctx context.Context, total, seg int64) error {
 		// TODO respに対して何かしらのビジネスロジック
 		fmt.Printf("resp: %+v\n", resp)
 
+		startKey = sk
 		if len(startKey) == 0 {
 			break // 続きが無いということなので終了
 		}

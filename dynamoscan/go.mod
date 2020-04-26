@@ -1,4 +1,4 @@
-module github.com/nichigas/mddm/job/unlink
+module github.com/laqiiz/serverless-batch-example/dynamoscan
 
 go 1.13
 
